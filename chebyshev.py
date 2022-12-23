@@ -29,29 +29,28 @@ def cheby1_filter_design(n, rp, wc, type, FS):
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.group_delay.html
     wgd, gd = signal.group_delay((b, a), fs=FS)
 
-    return w, h, wgd, gd, sos, wc, rp
+    return w, h, wgd, gd, sos
 
+def cheby2_filter_design(n, rs, wc, type, FS):
+    # Design an analog filter (analog = True)
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby2.html
+    # Output types: # ba’ = numerator/denominator, ‘zpk’=pole-zero, ‘sos’= second-order sections
 
-def cheby1_filter_test():
+    b, a = signal.cheby2(n, rs, wc, type, analog=True, output='ba')
 
-    # Generate a signal made up of 3 Hz and 50 Hz, sampled at 1 kHz
-    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby1.html
-    t = np.linspace(0, 1, 1000, False)  # 1 second
-    sig = np.sin(2*np.pi*3*t) + np.sin(2*np.pi*50*t)
+    sos = signal.cheby2(n, rs, wc, type, fs=FS, output='sos')
 
-    # set the filter parameters
-    n=10        # order of the filter
-    rp=1        # maximum ripple allowed below unity gain in the bandpass. Specified in dB as positive number
-    wc=25       # critical frequency
-    type='low'  # lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’
-    FS=1000     # The sampling frequency of the digital system.
+    # Compute frequency response of analog filter.
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.freqs.html
+    w, h = signal.freqs(b, a)
 
-    # Get the filter parameters
-    w, h, wgd, gd, sos, wc, rp = cheby1_filter_design(n, rp, wc, type, FS)
+    # Compute group delay of the filter
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.group_delay.html
+    wgd, gd = signal.group_delay((b, a), fs=FS)
 
-    # Filter it with sos
-    filtered = signal.sosfilt(sos, sig)
+    return w, h, wgd, gd, sos
 
+def filter_plot_response(w, h, wc, r, wgd, gd, t, sig, filtered):
     fig1, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     # plot the filter amplitude (frequency response)
     ax1.semilogx(w, 20 * np.log10(abs(h)))
@@ -61,7 +60,7 @@ def cheby1_filter_test():
     ax1.margins(0, 0.1)
     ax1.grid(which='both', axis='both')
     ax1.axvline(wc, color='green') # cutoff frequency
-    ax1.axhline(-rp, color='green') # rp
+    ax1.axhline(-r, color='green') # rp
     # plot the group delay
     ax2.set_title('Digital filter group delay')
     ax2.plot(wgd, gd)
@@ -81,4 +80,56 @@ def cheby1_filter_test():
     ax2.set_xlabel('Time [seconds]')
     plt.tight_layout()
     plt.show()
+
+def generate_test_signal_1():
+    # Generate a signal made up of 3 Hz and 50 Hz, sampled at 1 kHz
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby1.html
+    t = np.linspace(0, 1, 1000, False)  # 1 second
+    sig = np.sin(2*np.pi*3*t) + np.sin(2*np.pi*50*t)
+    
+    return t,sig
+
+
+def cheby1_filter_test():
+
+    # generate example signal (sampled at 1kHz, harmonics at 3 and 50 Hz)
+    t, sig = generate_test_signal_1()
+
+    # set the filter parameters
+    n=10        # order of the filter
+    rp=1        # maximum ripple allowed below unity gain in the bandpass. Specified in dB as positive number
+    wc=25       # critical frequency
+    type='low'  # lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’
+    FS=1000     # The sampling frequency of the digital system.
+
+    # Get the filter parameters
+    w, h, wgd, gd, sos = cheby1_filter_design(n, rp, wc, type, FS)
+
+    # Filter it with sos
+    filtered = signal.sosfilt(sos, sig)
+
+    # plot the results
+    filter_plot_response(w, h, wc, rp, wgd, gd, t, sig, filtered)
+
+def cheby2_filter_test():
+
+    # generate example signal (sampled at 1kHz, harmonics at 3 and 50 Hz)
+    t, sig = generate_test_signal_1()
+
+    # set the filter parameters
+    n=4        # order of the filter
+    rs=10        # maximum ripple allowed below unity gain in the bandpass. Specified in dB as positive number
+    wc=25       # critical frequency
+    type='low'  # lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’
+    FS=1000     # The sampling frequency of the digital system.
+
+    # Get the filter parameters
+    w, h, wgd, gd, sos = cheby1_filter_design(n, rs, wc, type, FS)
+
+    # Filter it with sos
+    filtered = signal.sosfilt(sos, sig)
+
+    # plot the results
+    filter_plot_response(w, h, wc, rs, wgd, gd, t, sig, filtered)
+
 
