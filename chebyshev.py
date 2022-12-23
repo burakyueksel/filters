@@ -12,13 +12,7 @@ import matplotlib.pyplot as plt
 
 # Chebyshev type I digital and analog filter design
 
-def cheby1_filter_design():
-
-    n=10        # order of the filter
-    rp=1        # maximum ripple allowed below unity gain in the bandpass. Specified in dB as positive number
-    wc=25       # critical frequency
-    type='low'  # lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’
-    FS=1000     # The sampling frequency of the digital system.
+def cheby1_filter_design(n, rp, wc, type, FS):
 
     # Design an analog filter (analog = True)
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.cheby1.html
@@ -45,8 +39,15 @@ def cheby1_filter_test():
     t = np.linspace(0, 1, 1000, False)  # 1 second
     sig = np.sin(2*np.pi*3*t) + np.sin(2*np.pi*50*t)
 
+    # set the filter parameters
+    n=10        # order of the filter
+    rp=1        # maximum ripple allowed below unity gain in the bandpass. Specified in dB as positive number
+    wc=25       # critical frequency
+    type='low'  # lowpass’, ‘highpass’, ‘bandpass’, ‘bandstop’
+    FS=1000     # The sampling frequency of the digital system.
+
     # Get the filter parameters
-    w, h, wgd, gd, sos, wc, rp = cheby1_filter_design()
+    w, h, wgd, gd, sos, wc, rp = cheby1_filter_design(n, rp, wc, type, FS)
 
     # Filter it with sos
     filtered = signal.sosfilt(sos, sig)
